@@ -1,0 +1,7 @@
+gfx/gfxrender
+.vs/*
+bin/*
+obj/*
+*.user
+*.suo
+node_modules/*

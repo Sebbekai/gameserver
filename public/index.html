@@ -1,97 +1,353 @@
-﻿<!DOCTYPE html>
-
-<html xmlns="http://www.w3.org/1999/xhtml" id="htmlTop">
+﻿<html id="htmlTop">
 
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title data-bind="text: title"></title>
 
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="Content/bootstrap.css" rel="stylesheet" />
-    <link href="Content/bootstrap-theme.css" rel="stylesheet" />
+    <link href="css/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet" />
+    <link href="css/lobby.css" rel="stylesheet" />
+    
+    <script src="Scripts/knockout-3.2.0.js"></script>
+    <script src="Scripts/jquery-2.1.1.min.js"></script>
+    <script src="Scripts/bootstrap.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="Scripts/GameLobbyViewModel.js"></script>
 
-    <title data-bind="text: appName"></title>
-
-    <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
-    <link href="css/default.css" rel="stylesheet" />
-
+    <script type="text/javascript">
+        var gameLobby;
+        function initViewModel() {
+            var socket = io.connect();
+            gameLobby = new GameLobbyViewModel(socket);
+            ko.applyBindings(gameLobby, document.getElementById("htmlTop"));
+        }
+        function warnExit(e) {
+            if (gameLobby && gameLobby.gameStarted())
+                e.returnValue = 'Game in progress. Really quit?';
+        }
+        $(function () {
+            initViewModel();
+            window.onbeforeunload = warnExit;
+        });
+    </script>
 </head>
+
 <body>
 
-    <div class="panel panel-default">
-        <div class="panel-heading bold" data-bind="text:appName"></div>
-        
-        <!-- Vy: spelet -->
-        <div class="panel-body" data-bind="visible:showGame">
-       
-            <h4 class="player selectedPlayer" data-bind="html:status"></h4>
+    <div class="jumbotron" data-bind="visible:startMode">
+        <h1>Enter nickname</h1>
+        <div>
+            <input type="text" class="form-control" data-bind="textInput:nickname,event: {keypress: submitNicknameKeyPress}" />
+        </div>
+        <br>
+        <div>
+            <button type="button" class="btn btn-primary btn-lg" data-bind="click:submitNickname">Play!</button>
+        </div>
+    </div>
 
-            <div class="float">
-                <canvas id="canvas" width="530" height="530"></canvas>
-            </div>
+    <div data-bind="visible:lobbyMode">
+        <h1 class="text-center" data-bind="text: title"></h1>
 
-            <div class="float " style="margin-left:20px;">
+        <div class="col-sm-8" data-bind="visible:gameMode">
+            <h2>Games</h2>
+            <div id="gameBox" class="well">
 
-                <div data-bind="foreach:players">
-                    <div class="player" data-bind="css:{selectedPlayer:$data==$root.currentPlayer()}">
-                        <div class="circle float ball" data-bind="style:{backgroundColor:Color}">&nbsp;</div>  <div style="margin-left:5px;" class="" data-bind="text:Name() +', Magneter:' +Drops()+', Poäng:'+ItemSum()"></div>
+                <div class="row">
+                    <div class="col-sm-4 col-sm-offset-1">
+                        <b>Game name</b>
+                    </div>
+
+                    <div class="col-sm-3">
+                        <b>Game type</b>
+                    </div>
+
+                    <div class="col-sm-2">
+                        <b>Players</b>
+                    </div>
+                    <div class="col-sm-2">
                     </div>
                 </div>
-                <div>
-                    <button class="btn btn-default" data-bind="click:configureGame">Starta om</button>
+
+                <div data-bind="foreach:games" class="row">
+
+                    <div class="col-sm-1">
+                        <span class="glyphicon glyphicon-lock" data-bind="visible:needPassword"></span>
+                    </div>
+
+                    <div class="col-sm-4" data-bind="text:name"></div>
+                    <div class="col-sm-3" data-bind="text:gameType.name"></div>
+                    <div class="col-sm-2" data-bind="text:players.length +'/'+ gameType.maxPlayers"></div>
+                    <div class="col-sm-2">
+                        <button type="button" class="pull-right btn btn-default btn-sm" data-bind="click:$parent.joinGame,enable:joinable">Join</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-4">
+                    <button type="button" class="btn btn-default btn-lg" data-bind="click:createGame">Create</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-8" data-bind="visible:createGameMode">
+            <h2>Create Game</h2>
+            <div id="createGameBox" class="well">
+
+                <div class="row">
+                    <div class="col-sm-4">Game name</div>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" data-bind="value:createGameName" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4">Game</div>
+                    <div class="col-sm-8">
+                        <select class="form-control" data-bind="options:gameTypes,value:selectedGame,optionsText:'name'"></select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4">Password (optional)</div>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" data-bind="value:createGamePassword" />
+                    </div>
                 </div>
 
             </div>
 
-        </div>
-        
-        <!-- Vy: spelinställningar -->
-        <div class="panel-body" data-bind="visible:showNumPlayers">
-            <h4>Ange antal spelare och startmagneter</h4>
-            Antal spelare (2-6):<br />
-            <input type="number" class="formMargin form-control" min="2" max="6" data-bind="value:numPlayers" />
-           
-            Antal startmagneter (1-20):<br />
-            <input type="number" class="formMargin form-control" min="1" max="20" data-bind="value:numStartDrops" />
-           
-
-            <button class="btn btn-default" data-bind=" click:namePlayers">Namnge användare</button>
-
-        </div>
-        
-        <!-- Vy: namnge spelare -->
-        <div class="panel-body" data-bind="visible:showNamePlayers">
-            <h4>Namnge spelare</h4>
-            <div data-bind="foreach:players">
-
-                <div class="formMargin">
-                    <input type="text" class="form-control" data-bind="value:Name,click:function(){Name('');}" />
+            <div class="row">
+                <div class="col-sm-6">
+                    <button type="button" class="btn btn-default btn-lg" data-bind="click:cancelCreateGame">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-lg" data-bind="click:doCreateGame">Create</button>
                 </div>
             </div>
+        </div>
 
-            <button class="btn btn-default" data-bind="hasFocus:true,click:startGame">Starta spel</button>
+        <div class="col-sm-8" data-bind="visible:gameStarted()">
+            <div id="gameWrapper"></div>
+        </div>
+
+        <div class="col-sm-8" data-bind="visible:gameLobbyMode() && !gameStarted()">
+            <div class="col-sm-6">
+                <h2>Players</h2>
+                <div id="gamePlayersBox" class="well">
+                    <div class="row">
+
+                        <div class="col-sm-5 col-sm-offset-1">
+                            <b>Name</b>
+                        </div>
+                        <div class="col-sm-6">
+                            <b>Wins</b>
+                        </div>
+                    </div>
+                    <div data-bind="foreach:gamePlayers">
+                        <div class="row">
+
+                            <div class="col-sm-1">
+                                <img src="img/admin.png" data-bind="visible:isAdmin" />
+                            </div>
+                            <div class="col-sm-5" data-bind="text:name">
+                            </div>
+                            <div class="col-sm-5" data-bind="text:wins + '/'+ $parent.gameMatchLength()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <button type="button" class="btn btn-default btn-lg" data-bind="click:leaveGame">Leave</button>
+                        <button type="button" class="btn btn-primary btn-lg" data-bind="click:startGame, visible:isAdmin() && !gameStarted() , enable:canStartGame">Start game</button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4">Selected game: </div>
+                    <div class="col-sm-8" data-bind="text:gameTypeName">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4">Players: </div>
+                    <div class="col-sm-8" data-bind="text:numPlayers">
+                    </div>
+                </div>
+
+                <div data-bind="visible:isAdmin() && !gameStarted()">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <b>Properties</b>
+                        </div>
+                    </div>
+
+                    <div data-bind="foreach:gameConfigList">
+                        <div class="row">
+                            <div class="col-sm-4" data-bind="text:name"></div>
+                            <div class="col-sm-8">
+                                <input type="number" class="form-control" data-bind="attr:{min:min,max:max}, value:value" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <h2>Game Chat</h2>
+                <div id="gameChatBox" class="well" data-bind="foreach:gameChats">
+                    <div class="row">
+                        <div class="col-sm-4 bold" data-bind="text:user"></div>
+                        <div class="col-sm-8">
+                            <div class="chatRow" data-bind="text:line,css:{'chatRowFromGame':fromGame, chatRowImportant:important}"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" data-bind="textInput:gameChatRow, event: {keypress: submitGameChatKeyPress}"></input>
+                    </div>
+                    <div class="col-sm-4">
+                        <button type="button" class="btn btn-default btn-lg" data-bind="click:submitGameChat">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-4">
+
+            <div data-bind="visible:gameStarted()">
+
+                <h2>Players</h2>
+                <div id="gamePlayersBoxInGame" class="well">
+                    <div class="row">
+
+                        <div class="col-sm-5 col-sm-offset-1">
+                            <b>Name</b>
+                        </div>
+                        <div class="col-sm-6">
+                            <b>Wins</b>
+                        </div>
+                    </div>
+                    <div data-bind="foreach:gamePlayers">
+                        <div class="row">
+                            <div class="col-sm-1">
+                                <img src="img/admin.png" data-bind="visible:isAdmin" />
+                            </div>
+                            <div class="col-sm-5" data-bind="text:name">
+                            </div>
+                            <div class="col-sm-5" data-bind="text:wins + '/'+ $parent.gameMatchLength()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <button type="button" class="btn btn-default btn-lg" data-bind="click:leaveGame">Leave</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div id="chatWrapper">
+
+                <ul class="nav nav-tabs chatTabs" data-bind="visible:gameStarted()">
+                    <li role="presentation" data-bind="css:{active:(chatMode()===1)}"><a href="#" data-bind="click:function(){chatMode(1);}">Game chat</a></li>
+                    <li role="presentation" data-bind="css:{active:(chatMode()===0)}"><a href="#" data-bind="click:function(){chatMode(0);}">Lobby chat</a></li>
+                </ul>
+
+                <div id="lobbyChatWrapper" data-bind="visible:chatMode()===0">
+                    <h2 data-bind="visible:!gameStarted()">Lobby Chat</h2>
+                    <div id="chatBox" class="well" data-bind="foreach:chats">
+                        <div class="row">
+                            <div class="col-sm-4 bold" data-bind="text:user"></div>
+                            <div class="col-sm-8">
+                                <div class="chatRow" data-bind="text:line"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" data-bind="textInput:chatRow, event: {keypress: submitChatKeyPress}" />
+                        </div>
+                        <div class="col-sm-4">
+                            <button type="button" class="btn btn-default btn-lg" data-bind="click:submitChat">Send</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="gameChatWrapper" data-bind="visible:gameStarted() && chatMode()===1">
+                    <div id="gameChatBoxInGame" class="well" data-bind="foreach:gameChats">
+                        <div class="row">
+                            <div class="col-sm-4 bold" data-bind="text:user"></div>
+                            <div class="col-sm-8">
+                                <div class="chatRow" data-bind="text:line,css:{'chatRowFromGame':fromGame, chatRowImportant:important}"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" data-bind="textInput:gameChatRow, event: {keypress: submitGameChatKeyPress}"></input>
+                        </div>
+                        <div class="col-sm-4">
+                            <button type="button" class="btn btn-default btn-lg" data-bind="click:submitGameChat">Send</button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="row">
+                <div class="col-sm-12" data-bind="text:'Players online: '+numConnectedClients()"></div>
+            </div>
         </div>
 
     </div>
 
-    <script src="Scripts/knockout-3.2.0.js"></script>
-    <script src="Scripts/jquery-2.1.1.js"></script>
-    <script src="Scripts/bootstrap.js"></script>
-    <script src="Scripts/CanvasDrawer.js"></script>
-    <script src="Scripts/RepellLogic.js"></script>
-    <script src="Scripts/RepellModels.js"></script>
-    <script src="Scripts/RepellViewModel.js"></script>
-    <script src="Scripts/main.js"></script>
+    <div id="passwordModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Enter password</h4>
+                </div>
+                <div class="modal-body">
+                    <p>Enter password to join game.</p>
+                    <p>
+                        <input id="gamePasswordInput" data-bind="textInput:gamePassword, event: {keypress: submitPasswordModalKeyPress}" type="text"
+                               class="form-control" />
+                    </p>
+                    <div class="validation" data-bind="text: '&nbsp;'+joinGameWithPasswordResult()"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" data-bind="click:joinGameWithPassword">Join</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
-    <!--<script>
-        (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
-        function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
-        e=o.createElement(i);r=o.getElementsByTagName(i)[0];
-        e.src='//www.google-analytics.com/analytics.js';
-        r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
-        ga('create','UA-XXXXX-X');ga('send','pageview');
-    </script>-->
+    <div id="alertModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title" data-bind="text:alertTitle"></h4>
+                </div>
+                <div class="modal-body">
+                    <p data-bind="text:alertText"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
+
 </html>

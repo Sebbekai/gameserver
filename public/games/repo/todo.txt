@@ -1,0 +1,71 @@
+TODO
+
+    gameOver cooldown
+        for att man inte ska kunna dubbelklicka och ej se varfor spelet tog slut
+        impl likt bomberman
+
+    animera utkastningen ocks�, nu f�rsvinner de bara.
+  
+    optimera
+    minspelare = 2
+    instruktioner
+
+    lysa upp alla adjacent objects med nuvarande spelares tur
+    kanske blinka nar det ar 'min' tur
+
+    sortera p� size (st�rst f�rst) s� att storst ritas overst.
+
+    medans man ritar, g�r att moves inte sl�pps igenom.
+            sett en timeout som i bomberman
+    regelgrej:
+        ska man itne f� knuffa innan man tagit och g�tt?!
+
+DONE
+
+*  kolla upp vart man maste klicka for att starta nytt spel
+*    skriv ut det,click game to continue.
+*     kolla upp om bagge kan gora?
+
+*inte ropa ut i f�rskott att spelet �r slut
+*ta bort lila n�r spelet �r slut
+*oavgjort
+*acceleration
+*se till att players och items inte �r separata arrayer :|
+*se till att shrinkpositionen g�r snabbare
+*rows och cols har fel namn
+*nollst�lla size animation om man fallar ut.
+
+*kolla upp varfor ett tomt event kommer?
+*  ta bort starta om knapp
+* initial draw
+*visa poang
+*   skicka med players
+*  skriva in IsCurrentPlayer
+*rensa upp filer
+* animering
+*refaktorisera sa att approchatarget tar ett obj istallet.
+*   skicka med Moved pa saker, om ! moved, resetta alla props.
+*   gora en metod updateItemPositions som resettar de tre props po servern.
+*  impl 
+* self.playerHasPlacedMovedTarget        
+*  self.gameOver 
+*  self.currentPlayer
+*self.oldpos
+*   det skall malas gult nar man markerar fro att paverka.
+* initial repaint!
+
+* skriva ut i chat vinnare
+*   matcher
+*    testa win set
+*    testa win game
+
+* fick ej poang nar jag kastade ut gra objekt.
+*  bugg :     if (thingOnPosition instanceof ItemModel) {
+*kunna starta ny omgang  
+*  oversatt status till engelska    
+*    publicera for test
+* ta bort style taggar ur game.html
+
+*  knuffa svart med svart gjorde att det ej animerades.
+*     var aven sa nar jag knuffade medmin gubbe vid ett tillfalle.
+*     endast svarta pluttar paverkas
